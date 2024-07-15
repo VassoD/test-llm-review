@@ -8,5 +8,5 @@ function findLargestNumber(arr) {
   return largest;
 }
 
-let numbers = [3, 5, 7, 2, 8];
+let numbers = ["3", 5, 7, 2, 8];
 console.log(findLargestNumber(numbers));
