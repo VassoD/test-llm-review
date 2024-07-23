@@ -1,14 +1,23 @@
 import os
 import json
+import subprocess
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 import logging
 
 logging.basicConfig(level=logging.INFO)
 
+def get_changed_files():
+    result = subprocess.run(['git', 'diff', '--name-only', 'origin/main...HEAD'], capture_output=True, text=True)
+    return result.stdout.strip().split('\n')
+
+def get_file_diff(file_path):
+    result = subprocess.run(['git', 'diff', 'origin/main...HEAD', '--', file_path], capture_output=True, text=True)
+    return result.stdout
+
 def analyze_code(file_content):
     anthropic = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     
-    prompt = f"{HUMAN_PROMPT} Please provide a brief code review for the following code. Focus on the most important 2-3 points. Be concise and direct, as if you're a developer leaving a quick comment on a pull request:\n\n{file_content}\n{AI_PROMPT}"
+    prompt = f"{HUMAN_PROMPT} Please review the following code changes and provide feedback. Focus on the most important 2-3 points. Be concise and direct, as if you're a developer leaving a quick comment on a pull request. Only comment on the changes shown, not on existing code:\n\n{file_content}\n{AI_PROMPT}"
     
     response = anthropic.completions.create(
         prompt=prompt,
@@ -23,15 +32,16 @@ def analyze_code(file_content):
 
 def main():
     comments = []
-    for root, _, files in os.walk("."):
-        for file in files:
-            if file.endswith((".js", ".py", ".html", ".css")):
-                file_path = os.path.join(root, file)
-                logging.info(f"Analyzing file: {file_path}")
-                with open(file_path, 'r') as f:
-                    code = f.read()
-                feedback = analyze_code(code)
-                comments.append(f"Review for {file_path}:\n\n{feedback}")
+    changed_files = get_changed_files()
+    for file_path in changed_files:
+        if file_path.endswith((".js")):
+            logging.info(f"Analyzing changes in file: {file_path}")
+            diff = get_file_diff(file_path)
+            if diff:
+                feedback = analyze_code(diff)
+                comments.append(f"Review for changes in {file_path}:\n\n{feedback}")
+            else:
+                logging.info(f"No changes found in {file_path}")
 
     with open('comments.json', 'w') as outfile:
         json.dump(comments, outfile)
