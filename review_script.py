@@ -31,21 +31,26 @@ def analyze_code(file_content):
     return feedback
 
 def main():
-    comments = []
+    comments = {}
     changed_files = get_changed_files()
     for file_path in changed_files:
         if file_path.endswith((".js")):
+            base_name = os.path.basename(file_path)
             logging.info(f"Analyzing changes in file: {file_path}")
             diff = get_file_diff(file_path)
             if diff:
                 feedback = analyze_code(diff)
-                comments.append(f"Review for changes in {file_path}:\n\n{feedback}")
+                if base_name not in comments:
+                    comments[base_name] = f"Review for changes in {file_path}:\n\n{feedback}"
+                else:
+                    logging.warning(f"Duplicate file name detected: {base_name}. Using path: {file_path}")
+                    comments[file_path] = f"Review for changes in {file_path}:\n\n{feedback}"
             else:
                 logging.info(f"No changes found in {file_path}")
 
     with open('comments.json', 'w') as outfile:
-        json.dump(comments, outfile)
-    logging.info(f"Comments saved to comments.json: {comments}")
+        json.dump(list(comments.values()), outfile)
+    logging.info(f"Comments saved to comments.json: {list(comments.values())}")
 
 if __name__ == "__main__":
     main()
