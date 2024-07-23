@@ -27,11 +27,12 @@ jobs:
         run: python review_script.py
 
       - name: Post comments
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const fs = require('fs');
-            const comments = JSON.parse(fs.readFileSync('comments.json'));
+            const comments = JSON.parse(fs.readFileSync('comments.json', 'utf8'));
             for (const comment of comments) {
               await github.rest.issues.createComment({
                 issue_number: context.issue.number,
