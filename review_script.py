@@ -41,16 +41,20 @@ def main():
             if diff:
                 feedback = analyze_code(diff)
                 if base_name not in comments:
-                    comments[base_name] = f"Review for changes in {file_path}:\n\n{feedback}"
+                    comments[base_name] = [f"Review for changes in {file_path}:\n\n{feedback}"]
                 else:
-                    logging.warning(f"Duplicate file name detected: {base_name}. Using path: {file_path}")
-                    comments[file_path] = f"Review for changes in {file_path}:\n\n{feedback}"
+                    comments[base_name].append(f"Additional changes in {file_path}:\n\n{feedback}")
             else:
                 logging.info(f"No changes found in {file_path}")
 
+    final_comments = []
+    for base_name, feedbacks in comments.items():
+        combined_feedback = "\n\n".join(feedbacks)
+        final_comments.append(f"Review for {base_name}:\n\n{combined_feedback}")
+
     with open('comments.json', 'w') as outfile:
-        json.dump(list(comments.values()), outfile)
-    logging.info(f"Comments saved to comments.json: {list(comments.values())}")
+        json.dump(final_comments, outfile)
+    logging.info(f"Comments saved to comments.json: {final_comments}")
 
 if __name__ == "__main__":
     main()
