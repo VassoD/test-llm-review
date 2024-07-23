@@ -29,22 +29,25 @@ def save_comments(comments):
 def analyze_code(file_content, previous_comments):
     anthropic = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     
-    prompt = f"""{HUMAN_PROMPT} As a senior developer, please review the following code changes and provide professional feedback. Focus on:
-1. Best practices and modern JavaScript conventions
-2. Code efficiency and performance
-3. Potential bugs or edge cases
-4. Suggestions for improvement
+    prompt = f"""{HUMAN_PROMPT} As a senior developer, provide a brief, easy-to-read code review for the following changes. Focus on:
+1. Key improvements or good practices implemented
+2. The most important suggestion for further improvement
 
-Be specific and provide examples where possible. Aim for 3-5 key points. 
-Here are the previous comments for this file:
+Guidelines:
+- Be concise. Limit your review to 2-3 short paragraphs.
+- Prioritize the most impactful feedback.
+- Avoid repeating suggestions from previous reviews unless they're critical and unaddressed.
 
+Previous review summary:
 {previous_comments}
 
-Please check if the developer has addressed these points. If they have, mention it positively. If any points were not addressed or new issues have arisen, highlight those. Avoid repeating suggestions that have already been implemented.
-
-Now, review this code:
-
+Code to review:
 {file_content}
+
+Provide your review in this format:
+1. Positive point(s): [Very brief mention of good changes]
+2. Top suggestion: [One key suggestion with a very short explanation]
+3. Overall: [One-sentence summary of the code quality]
 
 {AI_PROMPT}"""
     
