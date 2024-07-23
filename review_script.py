@@ -14,6 +14,18 @@ def get_file_diff(file_path):
     result = subprocess.run(['git', 'diff', 'origin/main...HEAD', '--', file_path], capture_output=True, text=True)
     return result.stdout
 
+def get_previous_comments(file_path):
+    try:
+        with open('previous_comments.json', 'r') as f:
+            all_comments = json.load(f)
+        return all_comments.get(file_path, "")
+    except FileNotFoundError:
+        return ""
+
+def save_comments(comments):
+    with open('previous_comments.json', 'w') as f:
+        json.dump(comments, f)
+
 def analyze_code(file_content, previous_comments):
     anthropic = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     
@@ -23,9 +35,12 @@ def analyze_code(file_content, previous_comments):
 3. Potential bugs or edge cases
 4. Suggestions for improvement
 
-Be specific and provide examples where possible. Aim for 3-5 key points. Don't repeat points mentioned in previous reviews. Here are the previous comments for context (ignore if empty):
+Be specific and provide examples where possible. Aim for 3-5 key points. 
+Here are the previous comments for this file:
 
 {previous_comments}
+
+Please check if the developer has addressed these points. If they have, mention it positively. If any points were not addressed or new issues have arisen, highlight those. Avoid repeating suggestions that have already been implemented.
 
 Now, review this code:
 
@@ -35,7 +50,7 @@ Now, review this code:
     
     response = anthropic.completions.create(
         prompt=prompt,
-        max_tokens_to_sample=300,
+        max_tokens_to_sample=400,
         model="claude-2.0",
         temperature=0.7,
     )
@@ -47,7 +62,6 @@ Now, review this code:
 def main():
     comments = {}
     changed_files = get_changed_files()
-    previous_comments = ""
     
     for change in changed_files:
         status, file = change.split('\t')
@@ -56,19 +70,21 @@ def main():
                 logging.info(f"Analyzing changes in file: {file}")
                 diff = get_file_diff(file)
                 if diff:
+                    previous_comments = get_previous_comments(file)
                     feedback = analyze_code(diff, previous_comments)
                     comments[file] = feedback
-                    previous_comments += f"\nReview for {file}:\n{feedback}\n"
                 else:
                     logging.info(f"No changes found in {file}")
         elif status == 'D':
             logging.info(f"File deleted: {file}. Skipping review.")
 
     final_comments = [f"Review for {file}:\n\n{feedback}" for file, feedback in comments.items()]
-
+    
     with open('comments.json', 'w') as outfile:
         json.dump(final_comments, outfile)
-    logging.info(f"Comments saved to comments.json: {final_comments}")
+    
+    save_comments(comments)
+    logging.info(f"Comments saved to comments.json and previous_comments.json")
 
 if __name__ == "__main__":
     main()

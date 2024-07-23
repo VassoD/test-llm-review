@@ -1,25 +1,33 @@
-function findLargestNumber(arr) {
-  let largest = arr[0];
-  for (let i = 1; i < arr.length; i++) {
-    if (arr[i] > largest) {
-      largest = arr[i];
-    }
+/**
+ * Finds the largest number in an array of numbers.
+ * @param {number[]} numbersArray - The array of numbers to search.
+ * @returns {number} The largest number in the array.
+ * @throws {Error} If the input is not an array or if the array is empty.
+ */
+const findLargestNumber = (numbersArray = []) => {
+  if (!Array.isArray(numbersArray) || numbersArray.length === 0) {
+    throw new Error("Input must be a non-empty array of numbers");
   }
-  return largest;
-}
+  return Math.max(...numbersArray);
+};
 
-let numbers = [3, 5, 7, 2, 8];
-console.log(findLargestNumber(numbers));
-
-function calculateAverage(nums) {
-  var sum = 0;
-  for (var i = 0; i < nums.length; i++) {
-    sum += nums[i];
+/**
+ * Calculates the average of an array of numbers.
+ * @param {number[]} numbersArray - The array of numbers to average.
+ * @returns {number} The average of the numbers in the array.
+ * @throws {Error} If the input is not an array or if the array is empty.
+ */
+const calculateAverage = (numbersArray = []) => {
+  if (!Array.isArray(numbersArray) || numbersArray.length === 0) {
+    throw new Error("Input must be a non-empty array of numbers");
   }
-  return sum / nums.length;
-}
+  return numbersArray.reduce((sum, num) => sum + num, 0) / numbersArray.length;
+};
 
-var result1 = findLargestNumber(numbers);
-var result2 = calculateAverage(numbers);
-console.log("Largest:", result1);
-console.log("Average:", result2);
+// Example usage
+const numbers = [3, 5, 7, 2, 8];
+const largest = findLargestNumber(numbers);
+const average = calculateAverage(numbers);
+
+console.log("Largest:", largest);
+console.log("Average:", average);
