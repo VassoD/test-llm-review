@@ -17,7 +17,7 @@ def get_file_diff(file_path):
 def analyze_code(file_content, previous_comments):
     anthropic = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     
-    prompt = f"{HUMAN_PROMPT} As a senior developer, please review the following code changes and provide professional feedback. Focus on:
+    prompt = f"""{HUMAN_PROMPT} As a senior developer, please review the following code changes and provide professional feedback. Focus on:
 1. Best practices and modern JavaScript conventions
 2. Code efficiency and performance
 3. Potential bugs or edge cases
@@ -31,7 +31,7 @@ Now, review this code:
 
 {file_content}
 
-{AI_PROMPT}"
+{AI_PROMPT}"""
     
     response = anthropic.completions.create(
         prompt=prompt,
