@@ -14,14 +14,28 @@ def get_file_diff(file_path):
     result = subprocess.run(['git', 'diff', 'origin/main...HEAD', '--', file_path], capture_output=True, text=True)
     return result.stdout
 
-def analyze_code(file_content):
+def analyze_code(file_content, previous_comments):
     anthropic = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     
-    prompt = f"{HUMAN_PROMPT} Please review the following code changes and provide feedback. Focus on the most important 2-3 points. Be concise and direct, as if you're a developer leaving a quick comment on a pull request. Only comment on the changes shown, not on existing code:\n\n{file_content}\n{AI_PROMPT}"
+    prompt = f"{HUMAN_PROMPT} As a senior developer, please review the following code changes and provide professional feedback. Focus on:
+1. Best practices and modern JavaScript conventions
+2. Code efficiency and performance
+3. Potential bugs or edge cases
+4. Suggestions for improvement
+
+Be specific and provide examples where possible. Aim for 3-5 key points. Don't repeat points mentioned in previous reviews. Here are the previous comments for context (ignore if empty):
+
+{previous_comments}
+
+Now, review this code:
+
+{file_content}
+
+{AI_PROMPT}"
     
     response = anthropic.completions.create(
         prompt=prompt,
-        max_tokens_to_sample=150,
+        max_tokens_to_sample=300,
         model="claude-2.0",
         temperature=0.7,
     )
@@ -33,6 +47,7 @@ def analyze_code(file_content):
 def main():
     comments = {}
     changed_files = get_changed_files()
+    previous_comments = ""
     
     for change in changed_files:
         status, file = change.split('\t')
@@ -41,8 +56,9 @@ def main():
                 logging.info(f"Analyzing changes in file: {file}")
                 diff = get_file_diff(file)
                 if diff:
-                    feedback = analyze_code(diff)
+                    feedback = analyze_code(diff, previous_comments)
                     comments[file] = feedback
+                    previous_comments += f"\nReview for {file}:\n{feedback}\n"
                 else:
                     logging.info(f"No changes found in {file}")
         elif status == 'D':
