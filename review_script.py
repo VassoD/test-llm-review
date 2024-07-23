@@ -30,27 +30,52 @@ def analyze_code(file_content):
     logging.info(f"Claude's feedback: {feedback}")
     return feedback
 
+def get_file_content(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            return file.read()
+    except FileNotFoundError:
+        logging.warning(f"File not found: {file_path}")
+        return None
+
+def are_files_identical(file1, file2):
+    content1 = get_file_content(file1)
+    content2 = get_file_content(file2)
+    return content1 == content2 and content1 is not None
+
 def main():
     comments = {}
     changed_files = get_changed_files()
+    
+    # Group identical files
+    file_groups = {}
     for file_path in changed_files:
         if file_path.endswith((".js")):
-            base_name = os.path.basename(file_path)
-            logging.info(f"Analyzing changes in file: {file_path}")
-            diff = get_file_diff(file_path)
-            if diff:
-                feedback = analyze_code(diff)
-                if base_name not in comments:
-                    comments[base_name] = [f"Review for changes in {file_path}:\n\n{feedback}"]
-                else:
-                    comments[base_name].append(f"Additional changes in {file_path}:\n\n{feedback}")
-            else:
-                logging.info(f"No changes found in {file_path}")
+            found_group = False
+            for group, paths in file_groups.items():
+                if any(are_files_identical(file_path, existing_path) for existing_path in paths):
+                    paths.append(file_path)
+                    found_group = True
+                    break
+            if not found_group:
+                file_groups[file_path] = [file_path]
+
+    for group, file_paths in file_groups.items():
+        logging.info(f"Analyzing changes in file group: {file_paths}")
+        diff = get_file_diff(group)
+        if diff:
+            feedback = analyze_code(diff)
+            comments[group] = (file_paths, feedback)
+        else:
+            logging.info(f"No changes found in {group}")
 
     final_comments = []
-    for base_name, feedbacks in comments.items():
-        combined_feedback = "\n\n".join(feedbacks)
-        final_comments.append(f"Review for {base_name}:\n\n{combined_feedback}")
+    for group, (file_paths, feedback) in comments.items():
+        if len(file_paths) == 1:
+            final_comments.append(f"Review for {file_paths[0]}:\n\n{feedback}")
+        else:
+            paths_str = ", ".join(file_paths)
+            final_comments.append(f"Review for files: {paths_str}\n\n{feedback}")
 
     with open('comments.json', 'w') as outfile:
         json.dump(final_comments, outfile)
